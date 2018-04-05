@@ -8,6 +8,11 @@ Dropwizard to Prometheus exporter.
 
 ## Usage
 
+Include sbt dependency:
+```
+"me.andrusha" %% "dropwizard-prometheus" % "0.1.1"
+```
+
 1. Add registry `MetricsCollector.register(registry)`
 2. Start server `MetricsCollector.start("0.0.0.0", 9095)`
 3. Gracefully stop server `MetricsCollector.stop()`
