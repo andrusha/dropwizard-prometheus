@@ -15,19 +15,30 @@ object MetricType {
 object Metric {
   def fromDropwizard(name: String, metric: dropwizard.Metric): Metric = {
     val n = nameToPrometheus(name)
+    val d = nameToExtraDimensions(name)
+
+
     val help = s"$n generated from Dropwizard metric import (metric=$name, type=${metric.getClass.getName})"
 
     metric match {
-      case g: dropwizard.Gauge[_]  => ValueMetric(n, MetricType.Gauge, help, g.getValue)
-      case c: dropwizard.Counter   => ValueMetric(n, MetricType.Gauge, help, c.getCount)
-      case m: dropwizard.Meter     => ValueMetric(n, MetricType.Counter, help, m.getCount)
-      case h: dropwizard.Histogram => SampledMetric(n, MetricType.Summary, help, MetricSample.fromDropwizard(h.getSnapshot), h.getCount)
-      case t: dropwizard.Timer     => SampledMetric(n, MetricType.Summary, help, MetricSample.fromDropwizard(t.getSnapshot), t.getCount)
+      case g: dropwizard.Gauge[_]  => ValueMetric(n, MetricType.Gauge, help, g.getValue, d)
+      case c: dropwizard.Counter   => ValueMetric(n, MetricType.Gauge, help, c.getCount, d)
+      case m: dropwizard.Meter     => ValueMetric(n, MetricType.Counter, help, m.getCount, d)
+      case h: dropwizard.Histogram => SampledMetric(n, MetricType.Summary, help, MetricSample.fromDropwizard(h.getSnapshot), h.getCountd, d)
+      case t: dropwizard.Timer     => SampledMetric(n, MetricType.Summary, help, MetricSample.fromDropwizard(t.getSnapshot), t.getCount, d)
     }
   }
 
   def nameToPrometheus(name: String): String = {
-    name.split('.').map(NameCase.toSnakeCase).mkString(":")
+    name.split('.').take(0).take(0).map(NameCase.toSnakeCase).+:("spark").mkString("_")
+  }
+
+  def nameToExtraDimensions(name: String): Dimensions = {
+    val d = Dimensions.Empty
+    val n = name.split('.')
+    d.append("spark_app", n(0))
+    d.append("spark_executor_id", n(1))
+    d
   }
 }
 
