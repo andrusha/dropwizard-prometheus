@@ -5,9 +5,8 @@ case class Dimensions(d: Map[String, String]) extends AnyVal {
     d.map { case (k, v) => s"""$k="$v"""" }.mkString("{", ",", "}")
   }
 
-  def append(k: String, v: String): Dimensions = {
-    Dimensions(d.updated(k, v))
-  }
+  def merge(other: Map[String, String]): Dimensions =
+    Dimensions(other.foldLeft(d) { case (m, (k, v)) => m.updated(k, v) })
 }
 
 object Dimensions {
