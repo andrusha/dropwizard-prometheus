@@ -6,7 +6,7 @@ lazy val root = (project in file(".")).
       organization := "me.andrusha",
       scalaVersion := "2.12.4",
       crossScalaVersions := Seq("2.12.4", "2.11.12"),
-      version      := "0.2.0-SNAPSHOT"
+      version      := "0.2.0"
     )),
     name := "Dropwizard Prometheus",
     description := "Dropwizard metrics exporter in Prometheus format",

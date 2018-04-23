@@ -26,6 +26,11 @@ object Metric {
     }
   }
 
+  /**
+    * https://prometheus.io/docs/concepts/data_model
+    * @param name to be converted
+    * @return metric name converted to Prometheus format
+    */
   def nameToPrometheus(name: String): String = {
     name.split('.').map(NameCase.toSnakeCase).mkString(":")
   }
