@@ -10,7 +10,7 @@ Dropwizard to Prometheus exporter.
 
 Include sbt dependency:
 ```
-"me.andrusha" %% "dropwizard-prometheus" % "0.1.1"
+"me.andrusha" %% "dropwizard-prometheus" % "0.2.0"
 ```
 
 1. Add registry `MetricsCollector.register(registry)`
@@ -40,4 +40,44 @@ private[spark] class PrometheusSink(
   
   override def report(): Unit = ()
 }
+```
+
+### Spark metric name converter
+
+It's possible to transform metrics after the fact to fit your naming scheme better. In case of spark you would want to change metric names to have common prefix, eg:
+
+```scala
+  override def start(): Unit = {
+   MetricsCollector.register(registry, sparkMetricsTranformer)
+  }
+
+  def sparkMetricsTranformer(m: Metric): Metric = m match {
+    case ValueMetric(name, tpe, desc, v, d) =>
+      ValueMetric(sparkName(name), tpe, desc, v, d.merge(extractDimensions(name)))
+    case SampledMetric(name, tpe, desc, samples, cnt, d) =>
+      SampledMetric(sparkName(name), tpe, desc, samples, cnt, d.merge(extractDimensions(name)))
+  }
+
+  /**
+    * Eg:
+    *   spark_application_1523628279755:208:executor:shuffle_total_bytes_read
+    *     v v v
+    *   spark:executor:shuffle_total_bytes_read
+    */
+  def sparkName(name: String): String = name.split(':').drop(2).+:("spark").mkString(":")
+
+  /**
+    * Two common naming patterns are:
+    *   spark_application_1523628279755:driver:dag_scheduler:message_processing_time
+    *   spark_application_1523628279755:208:executor:shuffle_total_bytes_read
+    */
+  def extractDimensions(name: String): Map[String, String] = name.split(':').toList match {
+    case appId :: "driver" :: _ =>
+      Map("app_id" -> appId, "app_type" -> "driver")
+    case appId :: executorId :: _ =>
+      Map("app_id" -> appId, "app_type" -> "executor", "executor_id" -> executorId)
+    case _ => Map.empty
+  }
+}
+
 ```

@@ -25,7 +25,7 @@ case class SampledMetric(
     dimensions: Dimensions = Dimensions.Empty) extends Metric {
   override def toPrometheus: String = {
     val s = samples.map { s =>
-      val d = dimensions.append("quantile", s.quantile)
+      val d = dimensions.merge(Map("quantile" -> s.quantile))
       s"""$name${d.toPrometheus} ${s.value}"""
     }.mkString("\n")
 

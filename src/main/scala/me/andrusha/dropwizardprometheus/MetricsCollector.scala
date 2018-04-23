@@ -10,13 +10,21 @@ import scala.annotation.tailrec
 
 
 object MetricsCollector {
-  private var metricRegistries: List[MetricRegistry] = Nil
+  private type MetricTransformer = Metric => Metric
+  private var metricRegistries: List[(MetricRegistry, MetricTransformer)] = Nil
   private var server: Option[EmbeddedHttpServer] = None
   private val logger: Logger = LoggerFactory.getLogger("me.andrusha.dropwizardprometheus.MetricsCollector")
 
-  def register(metricRegistry: MetricRegistry): Unit = {
+  /**
+    *
+    * @param metricRegistry metrics source
+    * @param metricTransformer post process metrics before submitting them to prometheus
+    */
+  def register(
+    metricRegistry: MetricRegistry,
+    metricTransformer: MetricTransformer = identity): Unit = {
     metricRegistries.synchronized {
-      metricRegistries = metricRegistry :: metricRegistries
+      metricRegistries = (metricRegistry, metricTransformer) :: metricRegistries
     }
     logger.info(s"Metrics registered: ${metricRegistry.getNames}")
   }
@@ -46,12 +54,14 @@ object MetricsCollector {
   private def metrics(): Seq[Metric] = {
     import scala.collection.JavaConverters._
 
-    metricRegistries.flatMap { r =>
-      r.getGauges().asScala.map((Metric.fromDropwizard _).tupled) ++
+    metricRegistries.flatMap { case (r, t) =>
+      val metrics = r.getGauges().asScala.map((Metric.fromDropwizard _).tupled) ++
         r.getCounters().asScala.map((Metric.fromDropwizard _).tupled) ++
         r.getHistograms().asScala.map((Metric.fromDropwizard _).tupled) ++
         r.getTimers().asScala.map((Metric.fromDropwizard _).tupled) ++
         r.getMeters().asScala.map((Metric.fromDropwizard _).tupled)
+
+      metrics.map(t)
     }
   }
 
