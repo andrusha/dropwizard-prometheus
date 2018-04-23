@@ -1,4 +1,5 @@
 # Dropwizard -> Prometheus
+[![Build Status](https://travis-ci.org/andrusha/dropwizard-prometheus.svg?branch=master)](https://travis-ci.org/andrusha/dropwizard-prometheus)
 
 Dropwizard to Prometheus exporter.
 
